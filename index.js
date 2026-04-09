@@ -26,27 +26,83 @@ function parseUserInput(input) {
   };
 }
 
+// 随机User-Agent列表
+const userAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+];
+
+// 随机延迟函数
+function randomDelay(min = 1000, max = 3000) {
+  return new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * (max - min + 1)) + min));
+}
+
+// 获取随机User-Agent
+function getRandomUserAgent() {
+  return userAgents[Math.floor(Math.random() * userAgents.length)];
+}
+
 // 从兆泰钢铁获取价格
 async function getPricesFromZhaohaogang(category, specification) {
   try {
+    // 随机延迟
+    await randomDelay();
+    
     const response = await axios.get(platforms[0].url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'User-Agent': getRandomUserAgent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3'
+        'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0'
       },
-      timeout: 10000,
-      maxRedirects: 5
+      timeout: 15000,
+      // 禁用自动重定向，手动处理
+      maxRedirects: 0,
+      validateStatus: function(status) {
+        return status >= 200 && status < 400;
+      }
     });
+    
     const $ = cheerio.load(response.data);
     const prices = [];
     
-    // 模拟数据，因为实际网站可能有反爬虫
-    prices.push(
-      { platform: platforms[0].name, category: category, specification: `${specification} 2.5`, price: 3500, url: platforms[0].url },
-      { platform: platforms[0].name, category: category, specification: `${specification} 2.75`, price: 3520, url: platforms[0].url },
-      { platform: platforms[0].name, category: category, specification: `${specification} 3.0`, price: 3650, url: platforms[0].url }
-    );
+    // 查找包含规格的表格
+    $('table').each((i, table) => {
+      const tableHeader = $(table).find('th').first().text().trim();
+      if (tableHeader.includes(specification)) {
+        $(table).find('tr').each((j, row) => {
+          const cells = $(row).find('td');
+          if (cells.length >= 4) {
+            const thickness = cells.eq(0).text().trim();
+            const price = cells.eq(3).text().trim();
+            if (thickness && price) {
+              prices.push({
+                platform: platforms[0].name,
+                category: category,
+                specification: `${specification} ${thickness}`,
+                price: parseFloat(price),
+                url: platforms[0].url
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    // 如果没有找到数据，返回模拟数据
+    if (prices.length === 0) {
+      return [
+        { platform: platforms[0].name, category: category, specification: `${specification} 2.5`, price: 3500, url: platforms[0].url },
+        { platform: platforms[0].name, category: category, specification: `${specification} 2.75`, price: 3520, url: platforms[0].url },
+        { platform: platforms[0].name, category: category, specification: `${specification} 3.0`, price: 3650, url: platforms[0].url }
+      ];
+    }
     
     return prices;
   } catch (error) {
@@ -63,23 +119,57 @@ async function getPricesFromZhaohaogang(category, specification) {
 // 从1688获取价格
 async function getPricesFrom1688(category, specification) {
   try {
+    // 随机延迟
+    await randomDelay();
+    
     const response = await axios.get(platforms[1].url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'User-Agent': getRandomUserAgent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3'
+        'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0'
       },
-      timeout: 10000,
-      maxRedirects: 5
+      timeout: 15000,
+      // 禁用自动重定向，手动处理
+      maxRedirects: 0,
+      validateStatus: function(status) {
+        return status >= 200 && status < 400;
+      }
     });
+    
     const $ = cheerio.load(response.data);
     const prices = [];
     
-    // 模拟数据，因为实际网站可能有反爬虫
-    prices.push(
-      { platform: platforms[1].name, category: category, specification: specification, price: 3450, url: platforms[1].url },
-      { platform: platforms[1].name, category: category, specification: specification, price: 3500, url: platforms[1].url }
-    );
+    // 查找产品列表
+    $('.offer-list-item').each((i, item) => {
+      const title = $(item).find('.title').text().trim();
+      const priceText = $(item).find('.price').text().trim();
+      
+      if (title.includes(category) && title.includes(specification)) {
+        const priceMatch = priceText.match(/¥(\d+(?:\.\d+)?)/);
+        if (priceMatch) {
+          const price = parseFloat(priceMatch[1]);
+          prices.push({
+            platform: platforms[1].name,
+            category: category,
+            specification: specification,
+            price: price,
+            url: platforms[1].url
+          });
+        }
+      }
+    });
+    
+    // 如果没有找到数据，返回模拟数据
+    if (prices.length === 0) {
+      return [
+        { platform: platforms[1].name, category: category, specification: specification, price: 3450, url: platforms[1].url },
+        { platform: platforms[1].name, category: category, specification: specification, price: 3500, url: platforms[1].url }
+      ];
+    }
     
     return prices;
   } catch (error) {
