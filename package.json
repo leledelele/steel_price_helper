@@ -1,0 +1,13 @@
+{
+  "name": "steel-price-helper",
+  "version": "1.0.0",
+  "description": "天津静海钢管报价查询工具",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
